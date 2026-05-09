@@ -11,25 +11,17 @@ Software Engineering 2
 **Course Code:**  
 SE2
 
-**Submission Date:**  
-May 2026
 
 ## Team Information
 
-| Team Member Name | Student ID | Contribution |
-|---|---|---|
-| احمد عادل الدرغامي زايد | 20230024 | User Service, Authentication, JWT |
-| احمد مجدي محمد عبدالحميد | 20230034 | Booking Service, Invoice Logic |
-| ابراهيم عبدالناصر محفوظ | 20230004 | Workspace Management, Reviews |
-| زياد مصطفى احمد عبده | 20230240 | API Gateway, Service Discovery |
-| مصطفى عتريس عبدالكريم | 20220484 | Frontend (HTML/CSS/JS) |
-| جون يوسف انور داود | 20230162 | Docker, SRS Documentation |
-
-## Revision History
-
-| Version | Date | Description | Author |
-|---|---|---|---|
-| 1.0 | May 2026 | Initial submission version | CoWork Hub Team |
+| Team Member Name | Student ID |
+|---|---|
+| احمد عادل الدرغامي زايد | 20230024 |
+| احمد مجدي محمد عبدالحميد | 20230034 |
+| ابراهيم عبدالناصر محفوظ | 20230004 |
+| زياد مصطفى احمد عبده | 20230240 |
+| مصطفى عتريس عبدالكريم | 20220484 |
+| جون يوسف انور داود | 20230162 |
 
 ## Table of Contents
 
