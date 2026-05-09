@@ -339,17 +339,39 @@ Main Flow:
 
 ## 8. System Architecture
 
+The system follows a **Microservices Architecture** composed of four independent Spring Boot services, all orchestrated through Docker Compose.
+
 ```mermaid
-flowchart LR
-    U["User Browser"] --> F["Frontend (HTML/CSS/JS)"]
-    F --> G["API Gateway"]
-    G --> US["User Service"]
-    G --> BS["Booking Service"]
-    US --> DB1["MySQL: coworking_db"]
-    BS --> DB2["MySQL: coworking_main_db"]
-    US --> E["Eureka Discovery"]
-    BS --> E
-    G --> E
+flowchart TB
+    subgraph CLIENT["Client Layer"]
+        B["User Browser"]
+        F["Frontend\nHTML / CSS / JavaScript"]
+    end
+
+    subgraph INFRA["Infrastructure Layer"]
+        E["Eureka Discovery Server\n:8761"]
+        G["API Gateway\n:8080"]
+    end
+
+    subgraph SERVICES["Business Services"]
+        US["User Service\n:8081\n- Registration\n- Login / JWT\n- Role Management"]
+        BS["Booking Service\n:8082\n- Workspaces\n- Bookings\n- Invoices\n- Reviews"]
+    end
+
+    subgraph DB["Data Layer"]
+        DB1[("MySQL\ncoworking_db\n(Users)")]
+        DB2[("MySQL\ncoworking_main_db\n(Bookings, Workspaces,\nInvoices, Reviews)")]
+    end
+
+    B --> F
+    F -->|"HTTP REST + JWT"| G
+    G -->|"Route /api/users/**"| US
+    G -->|"Route /api/bookings/**\n/api/workspaces/**\n/api/reviews/**"| BS
+    G <-->|"Service Discovery"| E
+    US <-->|"Register/Lookup"| E
+    BS <-->|"Register/Lookup"| E
+    US --> DB1
+    BS --> DB2
 ```
 
 ## 9. Entity Relationship Diagram (ERD)
@@ -408,22 +430,43 @@ erDiagram
 
 ```mermaid
 flowchart LR
-    C["Customer"]
-    A["Admin"]
-    E["Employee"]
+    subgraph ACTORS["Actors"]
+        C(["👤 Customer"])
+        A(["👑 Admin"])
+        EM(["🧑‍💼 Employee"])
+    end
 
-    UC1["Register"]
-    UC2["Login"]
-    UC3["Search Workspaces"]
-    UC4["Create Booking"]
-    UC5["Add Review"]
-    UC6["View Reviews"]
-    UC7["Manage Users"]
-    UC8["Add Workspace"]
-    UC9["Cancel Booking"]
-    UC10["View Bookings"]
-    UC11["View Invoices"]
-    UC12["Mark Invoice Paid"]
+    subgraph AUTH["Authentication Module"]
+        UC1["Register Account"]
+        UC2["Login"]
+    end
+
+    subgraph WORKSPACE_MOD["Workspace Module"]
+        UC3["Search Available Workspaces\n(by date/time range)"]
+        UC8["Add New Workspace"]
+    end
+
+    subgraph BOOKING_MOD["Booking Module"]
+        UC4["Create Booking"]
+        UC9["Cancel Booking"]
+        UC10["View All Bookings"]
+    end
+
+    subgraph INVOICE_MOD["Invoice Module"]
+        UC11["View All Invoices"]
+        UC12["Mark Invoice as Paid"]
+    end
+
+    subgraph REVIEW_MOD["Review Module"]
+        UC5["Submit Review & Rating"]
+        UC6["View Workspace Reviews"]
+    end
+
+    subgraph USER_MOD["User Management Module"]
+        UC7["Create User (ADMIN/EMPLOYEE)"]
+        UC13["Delete User"]
+        UC14["View All Users"]
+    end
 
     C --> UC1
     C --> UC2
@@ -433,15 +476,20 @@ flowchart LR
     C --> UC6
 
     A --> UC2
+    A --> UC3
     A --> UC7
     A --> UC8
     A --> UC9
     A --> UC10
     A --> UC11
     A --> UC12
+    A --> UC13
+    A --> UC14
 
-    E --> UC2
-    E --> UC10
+    EM --> UC2
+    EM --> UC3
+    EM --> UC10
+    EM --> UC11
 ```
 
 ## 11. Class Diagram
@@ -449,53 +497,157 @@ flowchart LR
 ```mermaid
 classDiagram
     class User {
-      Long id
-      String username
-      String password
-      String email
-      Role role
+        +Long id
+        +String username
+        +String password
+        +String email
+        +Role role
+    }
+
+    class Role {
+        <<enumeration>>
+        CUSTOMER
+        ADMIN
+        EMPLOYEE
     }
 
     class Workspace {
-      Long id
-      String name
-      WorkspaceType type
-      String description
-      Double pricePerHour
-      Integer capacity
-      boolean available
+        +Long id
+        +String name
+        +WorkspaceType type
+        +String description
+        +Double pricePerHour
+        +Integer capacity
+        +boolean available
+    }
+
+    class WorkspaceType {
+        <<enumeration>>
+        PRIVATE_OFFICE
+        OPEN_DESK
+        MEETING_ROOM
+        CONFERENCE_HALL
     }
 
     class Booking {
-      Long id
-      Long userId
-      LocalDateTime startTime
-      LocalDateTime endTime
-      Double totalAmount
-      String status
+        +Long id
+        +Long userId
+        +LocalDateTime startTime
+        +LocalDateTime endTime
+        +Double totalAmount
+        +String status
+        +Workspace workspace
+        +Invoice invoice
     }
 
     class Invoice {
-      Long id
-      String invoiceNumber
-      Double amount
-      LocalDateTime issuedAt
-      String paymentStatus
+        +Long id
+        +String invoiceNumber
+        +Double amount
+        +LocalDateTime issuedAt
+        +String paymentStatus
+        +Booking booking
     }
 
     class Review {
-      Long id
-      Long userId
-      Integer rating
-      String comment
+        +Long id
+        +Long userId
+        +Integer rating
+        +String comment
+        +Workspace workspace
     }
 
-    Workspace "1" --> "many" Review
-    Workspace "1" --> "many" Booking
-    Booking "1" --> "1" Invoice
+    class UserService {
+        <<interface>>
+        +registerUser(RegisterRequest) User
+        +createUserByAdmin(RegisterRequest) User
+        +login(LoginRequest) String
+        +getAllUsers() List
+        +getUserById(Long) User
+        +getUsernamesByIds(List) Map
+        +deleteUser(Long) void
+    }
+
+    class UserServiceImpl {
+        -UserRepository userRepository
+        -BCryptPasswordEncoder passwordEncoder
+        -JwtService jwtService
+        +registerUser(RegisterRequest) User
+        +login(LoginRequest) String
+    }
+
+    class BookingService {
+        -BookingRepository bookingRepository
+        -WorkspaceRepository workspaceRepository
+        -InvoiceRepository invoiceRepository
+        +createBooking(BookingRequest) BookingResponse
+        +getAllBookings() List
+        +cancelBooking(Long) BookingResponse
+    }
+
+    class LoggingAspect {
+        <<aspect>>
+        +applicationLayer() void
+        +logExecutionTime(ProceedingJoinPoint) Object
+    }
+
+    User --> Role : has
+    Workspace --> WorkspaceType : has
+    UserServiceImpl ..|> UserService : implements
+    Booking --> Workspace : reserved
+    Booking "1" --> "1" Invoice : generates
+    Workspace "1" --> "0..*" Booking : has
+    Workspace "1" --> "0..*" Review : receives
+    BookingService ..> Booking : manages
+    BookingService ..> Invoice : creates
+    LoggingAspect ..> UserServiceImpl : advises
+    LoggingAspect ..> BookingService : advises
 ```
 
-## 12. Sequence Diagram
+## 12. Sequence Diagrams
+
+### 12.1 User Registration & Login
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant Frontend
+    participant Gateway
+    participant UserService
+    participant MySQL
+
+    Customer->>Frontend: Fill registration form (username, email, password)
+    Frontend->>Gateway: POST /api/users/register
+    Gateway->>UserService: Forward request
+    UserService->>MySQL: Check if email already exists
+    alt Email already taken
+        MySQL-->>UserService: Email exists
+        UserService-->>Gateway: 400 Bad Request
+        Gateway-->>Frontend: Error message
+        Frontend-->>Customer: Show error
+    else Email is free
+        MySQL-->>UserService: OK
+        UserService->>UserService: Encode password (BCrypt)
+        UserService->>MySQL: Save new User (role = CUSTOMER)
+        MySQL-->>UserService: User saved
+        UserService-->>Gateway: 201 Created
+        Gateway-->>Frontend: Success response
+        Frontend-->>Customer: Registration successful
+    end
+
+    Customer->>Frontend: Enter username & password
+    Frontend->>Gateway: POST /api/users/login
+    Gateway->>UserService: Forward request
+    UserService->>MySQL: Find user by username
+    MySQL-->>UserService: User entity
+    UserService->>UserService: Verify password (BCrypt)
+    UserService->>UserService: Generate JWT token (username, role, userId)
+    UserService-->>Gateway: JWT token
+    Gateway-->>Frontend: JWT token
+    Frontend-->>Customer: Redirect to dashboard
+```
+
+### 12.2 Create Booking Flow
 
 ```mermaid
 sequenceDiagram
@@ -505,30 +657,148 @@ sequenceDiagram
     participant BookingService
     participant MySQL
 
-    Customer->>Frontend: Select workspace and time
-    Frontend->>Customer: Show confirmation popup with total cost
-    Customer->>Frontend: Confirm booking
-    Frontend->>Gateway: POST /api/bookings/create
+    Customer->>Frontend: Select start time and end time
+    Frontend->>Gateway: GET /api/workspaces/available?start=...&end=...
     Gateway->>BookingService: Forward request
-    BookingService->>MySQL: Validate availability and save booking
-    BookingService->>MySQL: Create invoice
-    BookingService-->>Gateway: BookingResponse
-    Gateway-->>Frontend: BookingResponse
-    Frontend-->>Customer: Show booking details
+    BookingService->>MySQL: Query available workspaces
+    MySQL-->>BookingService: List of available workspaces
+    BookingService-->>Gateway: WorkspaceDTO list
+    Gateway-->>Frontend: Workspace list
+    Frontend-->>Customer: Show available workspaces with prices
+
+    Customer->>Frontend: Select workspace & confirm booking
+    Frontend->>Gateway: POST /api/bookings/create (JWT in header)
+    Gateway->>Gateway: Validate JWT token
+    Gateway->>BookingService: Forward request with user context
+    BookingService->>BookingService: Validate start/end times
+    BookingService->>MySQL: Check overlapping bookings
+    alt Workspace already booked
+        MySQL-->>BookingService: Overlap found
+        BookingService-->>Gateway: 400 Workspace unavailable
+        Gateway-->>Frontend: Error
+        Frontend-->>Customer: Show conflict message
+    else Workspace is free
+        MySQL-->>BookingService: No overlap
+        BookingService->>BookingService: Calculate total amount
+        BookingService->>MySQL: Save Booking (status=PENDING)
+        BookingService->>BookingService: Generate invoice number (UUID)
+        BookingService->>MySQL: Save Invoice (status=UNPAID)
+        MySQL-->>BookingService: Booking + Invoice saved
+        BookingService-->>Gateway: BookingResponse (with invoiceNumber)
+        Gateway-->>Frontend: BookingResponse
+        Frontend-->>Customer: Show booking confirmation
+    end
 ```
 
-## 13. Activity Diagram
+### 12.3 Admin: Cancel Booking & Mark Invoice Paid
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant Frontend
+    participant Gateway
+    participant BookingService
+    participant MySQL
+
+    Admin->>Frontend: Click Cancel on a booking
+    Frontend->>Gateway: PATCH /api/bookings/{id}/cancel (JWT in header)
+    Gateway->>Gateway: Validate JWT - check role = ADMIN
+    Gateway->>BookingService: Forward request
+    BookingService->>MySQL: Find booking by ID
+    MySQL-->>BookingService: Booking entity
+    BookingService->>MySQL: Delete associated invoice
+    BookingService->>MySQL: Update booking status = CANCELLED
+    MySQL-->>BookingService: Updated
+    BookingService-->>Gateway: BookingResponse (CANCELLED)
+    Gateway-->>Frontend: Success
+    Frontend-->>Admin: Booking marked as cancelled
+
+    Admin->>Frontend: Click Mark as Paid on invoice
+    Frontend->>Gateway: PATCH /api/invoices/{id}/pay (JWT in header)
+    Gateway->>Gateway: Validate JWT - check role = ADMIN
+    Gateway->>BookingService: Forward request
+    BookingService->>MySQL: Find invoice by ID
+    BookingService->>MySQL: Update paymentStatus = PAID
+    MySQL-->>BookingService: Updated
+    BookingService-->>Gateway: InvoiceDTO
+    Gateway-->>Frontend: Success
+    Frontend-->>Admin: Invoice marked as paid
+```
+
+## 13. Activity Diagrams
+
+### 13.1 Customer Booking Flow
 
 ```mermaid
 flowchart TD
-    A["User logs in"] --> B["Search available workspaces"]
-    B --> C["Select workspace"]
-    C --> D["Review booking details and price"]
-    D --> E{"Confirm?"}
-    E -- Yes --> F["Create booking"]
-    F --> G["Generate invoice"]
-    G --> H["Display booking confirmation"]
-    E -- No --> I["Cancel process"]
+    START(["🟢 Start"]) --> A["Open CoWork Hub website"]
+    A --> B{"Has account?"}
+    B -- No --> C["Fill registration form"]
+    C --> D["Submit registration"]
+    D --> E{"Email already\nregistered?"}
+    E -- Yes --> F["Show error message"]
+    F --> C
+    E -- No --> G["Account created\nwith CUSTOMER role"]
+    G --> H["Redirect to login"]
+    B -- Yes --> H
+    H --> I["Enter username & password"]
+    I --> J{"Credentials\nvalid?"}
+    J -- No --> K["Show invalid\ncredentials error"]
+    K --> I
+    J -- Yes --> L["JWT token issued\nRedirect to dashboard"]
+    L --> M["Select date/time range"]
+    M --> N["Search available workspaces"]
+    N --> O{"Workspaces\nfound?"}
+    O -- No --> P["Show no availability message"]
+    P --> M
+    O -- Yes --> Q["Browse workspace list\n(name, type, price/hr, capacity)"]
+    Q --> R["Select a workspace"]
+    R --> S["Review booking summary\n(duration, total cost)"]
+    S --> T{"Confirm\nbooking?"}
+    T -- No --> Q
+    T -- Yes --> U["POST /api/bookings/create"]
+    U --> V{"Time slot\nstill available?"}
+    V -- No --> W["Show conflict error"]
+    W --> M
+    V -- Yes --> X["Booking saved\n(status = PENDING)"]
+    X --> Y["Invoice auto-generated\n(status = UNPAID)"]
+    Y --> Z["Show booking confirmation\nwith invoice number"]
+    Z --> END(["🔴 End"])
+```
+
+### 13.2 Admin Management Flow
+
+```mermaid
+flowchart TD
+    START2(["🟢 Admin Login"]) --> A2["Admin logs in\nJWT with role=ADMIN"]
+    A2 --> B2["Admin Dashboard"]
+    B2 --> C2{"Choose action"}
+
+    C2 -- "Manage Users" --> D2["View all users"]
+    D2 --> E2{"Action?"}
+    E2 -- "Create User" --> F2["POST /api/users/admin/create-user\n(set role: EMPLOYEE or ADMIN)"]
+    F2 --> B2
+    E2 -- "Delete User" --> G2["DELETE /api/users/admin/delete/id"]
+    G2 --> B2
+
+    C2 -- "Manage Workspaces" --> H2["POST /api/workspaces/add\n(name, type, price, capacity)"]
+    H2 --> B2
+
+    C2 -- "View Bookings" --> I2["GET /api/bookings/all"]
+    I2 --> J2{"Action?"}
+    J2 -- "Cancel booking" --> K2["PATCH /api/bookings/id/cancel"]
+    K2 --> L2["Booking = CANCELLED\nInvoice deleted"]
+    L2 --> B2
+    J2 -- "Back" --> B2
+
+    C2 -- "Manage Invoices" --> M2["GET /api/invoices/all"]
+    M2 --> N2{"Invoice UNPAID?"}
+    N2 -- Yes --> O2["PATCH /api/invoices/id/pay"]
+    O2 --> P2["Invoice = PAID"]
+    P2 --> B2
+    N2 -- No --> B2
+
+    B2 --> END2(["🔴 End"])
 ```
 
 ## 14. Constraints
