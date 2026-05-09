@@ -1,0 +1,2 @@
+com\coworking\booking\aspect\LoggingAspect.class
+com\coworking\booking\config\JwtAuthenticationFilter.class

@@ -11,18 +11,6 @@ Software Engineering 2
 **Course Code:**  
 SE2
 
-**Instructor Name:**  
-`[Instructor Name]`
-
-**Teaching Assistant:**  
-`[TA Name]`
-
-**Department / Program:**  
-Computer Science
-
-**Faculty / University:**  
-`[Faculty / University Name]`
-
 **Submission Date:**  
 May 2026
 
@@ -30,18 +18,18 @@ May 2026
 
 | Team Member Name | Student ID | Contribution |
 |---|---|---|
-| `[Member 1 Name]` | `[ID]` | User Service, Authentication, JWT |
-| `[Member 2 Name]` | `[ID]` | Booking Service, Invoice Logic |
-| `[Member 3 Name]` | `[ID]` | Workspace Management, Reviews |
-| `[Member 4 Name]` | `[ID]` | API Gateway, Service Discovery |
-| `[Member 5 Name]` | `[ID]` | Frontend (HTML/CSS/JS) |
-| `[Member 6 Name]` | `[ID]` | Docker, SRS Documentation |
+| احمد عادل الدرغامي زايد | 20230024 | User Service, Authentication, JWT |
+| احمد مجدي محمد عبدالحميد | 20230034 | Booking Service, Invoice Logic |
+| ابراهيم عبدالناصر محفوظ | 20230004 | Workspace Management, Reviews |
+| زياد مصطفى احمد عبده | 20230240 | API Gateway, Service Discovery |
+| مصطفى عتريس عبدالكريم | 20220484 | Frontend (HTML/CSS/JS) |
+| جون يوسف انور داود | 20230162 | Docker, SRS Documentation |
 
 ## Revision History
 
 | Version | Date | Description | Author |
 |---|---|---|---|
-| 1.0 | `[Date]` | Initial submission version | `[Team Name / Members]` |
+| 1.0 | May 2026 | Initial submission version | CoWork Hub Team |
 
 ## Table of Contents
 
@@ -431,9 +419,9 @@ erDiagram
 ```mermaid
 flowchart LR
     subgraph ACTORS["Actors"]
-        C(["👤 Customer"])
-        A(["👑 Admin"])
-        EM(["🧑‍💼 Employee"])
+        C(["Customer"])
+        A(["Admin"])
+        EM(["Employee"])
     end
 
     subgraph AUTH["Authentication Module"]
@@ -731,7 +719,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    START(["🟢 Start"]) --> A["Open CoWork Hub website"]
+    START(["Start"]) --> A["Open CoWork Hub website"]
     A --> B{"Has account?"}
     B -- No --> C["Fill registration form"]
     C --> D["Submit registration"]
@@ -763,14 +751,14 @@ flowchart TD
     V -- Yes --> X["Booking saved\n(status = PENDING)"]
     X --> Y["Invoice auto-generated\n(status = UNPAID)"]
     Y --> Z["Show booking confirmation\nwith invoice number"]
-    Z --> END(["🔴 End"])
+    Z --> END(["End"])
 ```
 
 ### 13.2 Admin Management Flow
 
 ```mermaid
 flowchart TD
-    START2(["🟢 Admin Login"]) --> A2["Admin logs in\nJWT with role=ADMIN"]
+    START2(["Admin Login"]) --> A2["Admin logs in\nJWT with role=ADMIN"]
     A2 --> B2["Admin Dashboard"]
     B2 --> C2{"Choose action"}
 
@@ -798,7 +786,7 @@ flowchart TD
     P2 --> B2
     N2 -- No --> B2
 
-    B2 --> END2(["🔴 End"])
+    B2 --> END2(["End"])
 ```
 
 ## 14. Constraints
