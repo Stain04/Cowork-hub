@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>CoWork Hub | لوحة المستخدم</title>
+</head>
+<body>
+    <nav class="topbar">
+        <div>
+            <strong>CoWork Hub</strong>
+            <span id="displayUser"></span>
+            <span class="role-pill" id="displayRole"></span>
+        </div>
+        <div class="nav-actions">
+            <a href="dashboard.htm">الرئيسية</a>
+            <a href="admin.htm" id="adminLink" class="hidden">الإدارة</a>
+            <button class="ghost" onclick="logout()">خروج</button>
+        </div>
+    </nav>
+
+    <main class="app-shell">
+        <section class="page-header">
+            <div>
+                <h1>حجز مساحة عمل</h1>
+                <p>اختر الفترة، ابحث عن المساحات المتاحة، ثم أكّد الحجز بعد مراجعة السعر.</p>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="section-title">
+                <h2>البحث عن المساحات المتاحة</h2>
+                <button class="secondary small" onclick="setDefaultSearchTimes()">وقت افتراضي</button>
+            </div>
+            <div class="form-grid">
+                <div>
+                    <label for="searchStart">وقت البداية</label>
+                    <input type="datetime-local" id="searchStart">
+                </div>
+                <div>
+                    <label for="searchEnd">وقت النهاية</label>
+                    <input type="datetime-local" id="searchEnd">
+                </div>
+                <button class="align-end" onclick="loadAvailableWorkspaces()">بحث</button>
+            </div>
+            <p class="message" id="workspaceMessage"></p>
+            <div class="list-grid" id="workspaceList"></div>
+        </section>
+
+        <section class="panel">
+            <div class="section-title">
+                <h2>آخر حجز</h2>
+                <span id="bookingStatus" class="muted">لا يوجد حجز بعد</span>
+            </div>
+            <div id="latestBooking" class="details-box"></div>
+        </section>
+
+        <section class="panel">
+            <h2>إضافة تقييم</h2>
+            <div class="form-grid">
+                <div>
+                    <label for="reviewWorkspaceId">رقم المساحة</label>
+                    <input type="number" id="reviewWorkspaceId" min="1">
+                </div>
+                <div>
+                    <label for="reviewRating">التقييم</label>
+                    <select id="reviewRating">
+                        <option value="5">5 - ممتاز</option>
+                        <option value="4">4 - جيد جدًا</option>
+                        <option value="3">3 - جيد</option>
+                        <option value="2">2 - مقبول</option>
+                        <option value="1">1 - ضعيف</option>
+                    </select>
+                </div>
+                <div class="wide">
+                    <label for="reviewComment">تعليق</label>
+                    <input type="text" id="reviewComment" placeholder="اكتب رأيك في المساحة">
+                </div>
+                <button class="align-end" onclick="addReview()">إرسال التقييم</button>
+            </div>
+            <p class="message" id="reviewMessage"></p>
+        </section>
+
+        <section class="panel">
+            <div class="section-title">
+                <h2>التقييمات</h2>
+                <button class="secondary small" onclick="loadReviewsFromInput()">عرض التقييمات</button>
+            </div>
+            <p class="muted">اكتب رقم المساحة في خانة التقييم بالأعلى ثم اعرض التقييمات الخاصة بها.</p>
+            <div class="stack-list" id="reviewList"></div>
+        </section>
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        requireAuth();
+        initDashboard();
+    </script>
+</body>
+</html>
