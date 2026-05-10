@@ -357,58 +357,6 @@ flowchart TB
     BS --> DB2
 ```
 
-## 9. Entity Relationship Diagram (ERD)
-
-```mermaid
-erDiagram
-    USER {
-        Long id PK
-        String username
-        String password
-        String email
-        String role
-    }
-    WORKSPACE {
-        Long id PK
-        String name
-        String type
-        String description
-        Double pricePerHour
-        Integer capacity
-        Boolean available
-    }
-    BOOKING {
-        Long id PK
-        Long userId FK
-        Long workspaceId FK
-        String startTime
-        String endTime
-        Double totalAmount
-        String status
-    }
-    INVOICE {
-        Long id PK
-        String invoiceNumber
-        Double amount
-        String issuedAt
-        String paymentStatus
-        Long bookingId FK
-    }
-    REVIEW {
-        Long id PK
-        Long userId FK
-        Long workspaceId FK
-        Integer rating
-        String comment
-    }
-
-    USER ||--o{ BOOKING : "makes"
-    WORKSPACE ||--o{ BOOKING : "reserved via"
-    BOOKING ||--|| INVOICE : "generates"
-    WORKSPACE ||--o{ REVIEW : "receives"
-    USER ||--o{ REVIEW : "writes"
-```
-
 ## 10. Use Case Diagram
 
 ```mermaid
