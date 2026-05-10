@@ -92,14 +92,14 @@ function requireAuth() {
 
     if (userElement) userElement.textContent = decoded.sub || "";
     if (roleElement) roleElement.textContent = decoded.role || "";
-    if (adminLink && decoded.role === "ADMIN") adminLink.classList.remove("hidden");
+    if (adminLink && (decoded.role === "ADMIN" || decoded.role === "EMPLOYEE")) adminLink.classList.remove("hidden");
 
     return decoded;
 }
 
 function requireAdmin() {
     const decoded = decodeToken();
-    if (!decoded || decoded.role !== "ADMIN") {
+    if (!decoded || (decoded.role !== "ADMIN" && decoded.role !== "EMPLOYEE")) {
         window.location.href = "./dashboard.htm";
     }
 }
@@ -455,6 +455,8 @@ async function loadAllUsers() {
     if (!list) return;
     list.innerHTML = "جاري التحميل...";
 
+    const decoded = decodeToken();
+
     try {
         const users = await requestJson(USER_API, {
             method: "GET",
@@ -467,7 +469,7 @@ async function loadAllUsers() {
                     <span class="role-pill">${user.role}</span>
                 </div>
                 <span class="muted">${user.email}</span>
-                ${user.role !== "ADMIN" ? `<button class="danger" onclick="deleteUser(${user.id})">حذف</button>` : ""}
+                ${decoded && decoded.role === "ADMIN" && user.role !== "ADMIN" ? `<button class="danger" onclick="deleteUser(${user.id})">حذف</button>` : ""}
             </article>
         `).join("");
     } catch (error) {
