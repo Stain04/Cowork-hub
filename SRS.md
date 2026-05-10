@@ -99,14 +99,17 @@ The frontend is a static web interface that communicates with the backend throug
   - Creates bookings
   - Adds reviews
 - `Admin`
-  - Manages users
+  - Manages users (Create and Delete)
   - Adds workspaces
   - Cancels bookings
   - Updates invoice payment status
   - Views all bookings and invoices
 - `Employee`
-  - Views bookings
-  - Can be extended for operational support
+  - Creates users (cannot delete)
+  - Adds workspaces
+  - Cancels bookings
+  - Updates invoice payment status
+  - Views all bookings and invoices
 
 ### 2.4 Operating Environment
 - Frontend: HTML, CSS, JavaScript
@@ -134,7 +137,7 @@ The system shall authenticate a user and issue a JWT token after successful logi
 The system shall restrict access to protected endpoints based on user role.
 
 ### FR-4 Workspace Management
-The system shall allow an admin to add a new workspace with name, type, description, price per hour, capacity, and availability status.
+The system shall allow an admin or employee to add a new workspace with name, type, description, price per hour, capacity, and availability status.
 
 ### FR-5 Workspace Availability Search
 The system shall allow a customer to search for available workspaces by start time and end time.
@@ -146,13 +149,13 @@ The system shall allow a customer to create a booking for an available workspace
 The system shall reject bookings with invalid times or overlapping reservations.
 
 ### FR-8 Booking Cancellation
-The system shall allow an admin to cancel an existing booking.
+The system shall allow an admin or employee to cancel an existing booking.
 
 ### FR-9 Invoice Generation
 The system shall automatically create an invoice when a booking is created.
 
 ### FR-10 Invoice Payment Status Update
-The system shall allow an admin to update invoice payment status from `UNPAID` to `PAID`.
+The system shall allow an admin or employee to update invoice payment status from `UNPAID` to `PAID`.
 
 ### FR-11 Review Submission
 The system shall allow a customer to submit a review and rating for a workspace.
@@ -161,7 +164,7 @@ The system shall allow a customer to submit a review and rating for a workspace.
 The system shall display reviews for a workspace, including reviewer username, rating, and comment.
 
 ### FR-13 User Management
-The system shall allow an admin to create users and delete non-admin users.
+The system shall allow an admin or employee to create users. Only an admin shall be allowed to delete non-admin users.
 
 ### FR-14 Booking and Invoice Viewing
 The system shall allow authorized staff to view all bookings and invoices.
@@ -253,14 +256,14 @@ Main Flow:
 4. System stores booking and creates invoice.
 
 ### UC-5 Cancel Booking
-Actor: Admin  
+Actor: Admin/Employee  
 Precondition: Booking exists  
 Main Flow:
 1. Admin selects a booking.
 2. System changes its status to `CANCELLED`.
 
 ### UC-6 Mark Invoice as Paid
-Actor: Admin  
+Actor: Admin/Employee  
 Precondition: Invoice exists  
 Main Flow:
 1. Admin selects an unpaid invoice.
@@ -468,8 +471,13 @@ flowchart LR
 
     EM --> UC2
     EM --> UC3
+    EM --> UC7
+    EM --> UC8
+    EM --> UC9
     EM --> UC10
     EM --> UC11
+    EM --> UC12
+    EM --> UC14
 ```
 
 ## 11. Class Diagram
