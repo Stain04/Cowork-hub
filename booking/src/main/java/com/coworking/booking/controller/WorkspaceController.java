@@ -27,7 +27,7 @@ public class WorkspaceController {
         return ResponseEntity.ok(workspaceService.getAvailableWorkspaces(start, end));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @PostMapping("/add")
     public ResponseEntity<Workspace> addWorkspace(@Valid @RequestBody Workspace workspace) {
         return ResponseEntity.ok(workspaceService.saveWorkspace(workspace));

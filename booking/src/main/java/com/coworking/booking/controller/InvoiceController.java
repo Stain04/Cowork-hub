@@ -16,13 +16,13 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @GetMapping("/all")
     public ResponseEntity<List<InvoiceDTO>> getAllInvoices() {
         return ResponseEntity.ok(invoiceService.getAllInvoices());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     @PatchMapping("/{id}/payment-status")
     public ResponseEntity<InvoiceDTO> updateStatus(@PathVariable Long id, @RequestParam String status) {
         return ResponseEntity.ok(invoiceService.updatePaymentStatus(id, status));
