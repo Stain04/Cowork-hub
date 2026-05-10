@@ -485,64 +485,141 @@ flowchart LR
 ```mermaid
 classDiagram
     class User {
-        +Long id
-        +String username
-        +String password
-        +String email
-        +Role role
+        -Long id
+        -String username
+        -String password
+        -String email
+        -Role role
+        +getId() Long
+        +getUsername() String
+        +getPassword() String
+        +getEmail() String
+        +getRole() Role
+        +setId(Long) void
+        +setUsername(String) void
+        +setPassword(String) void
+        +setEmail(String) void
+        +setRole(Role) void
+        +builder()$ UserBuilder
     }
 
     class Role {
         <<enumeration>>
-        CUSTOMER
         ADMIN
         EMPLOYEE
+        CUSTOMER
     }
 
     class Workspace {
-        +Long id
-        +String name
-        +WorkspaceType type
-        +String description
-        +Double pricePerHour
-        +Integer capacity
-        +boolean available
+        -Long id
+        -String name
+        -WorkspaceType type
+        -String description
+        -Double pricePerHour
+        -Integer capacity
+        -boolean available
+        -List~Review~ reviews
+        +getId() Long
+        +getName() String
+        +getType() WorkspaceType
+        +getDescription() String
+        +getPricePerHour() Double
+        +getCapacity() Integer
+        +isAvailable() boolean
+        +getReviews() List~Review~
+        +builder()$ WorkspaceBuilder
     }
 
     class WorkspaceType {
         <<enumeration>>
-        PRIVATE_OFFICE
-        OPEN_DESK
         MEETING_ROOM
-        CONFERENCE_HALL
+        PRIVATE_OFFICE
+        DEDICATED_DESK
+        SHARED_SPACE
     }
 
     class Booking {
-        +Long id
-        +Long userId
-        +LocalDateTime startTime
-        +LocalDateTime endTime
-        +Double totalAmount
-        +String status
-        +Workspace workspace
-        +Invoice invoice
+        -Long id
+        -Long userId
+        -Workspace workspace
+        -LocalDateTime startTime
+        -LocalDateTime endTime
+        -Double totalAmount
+        -String status
+        -Invoice invoice
+        +getId() Long
+        +getUserId() Long
+        +getWorkspace() Workspace
+        +getStartTime() LocalDateTime
+        +getEndTime() LocalDateTime
+        +getTotalAmount() Double
+        +getStatus() String
+        +getInvoice() Invoice
+        +setStatus(String) void
+        +setInvoice(Invoice) void
+        +builder()$ BookingBuilder
     }
 
     class Invoice {
-        +Long id
-        +String invoiceNumber
-        +Double amount
-        +LocalDateTime issuedAt
-        +String paymentStatus
-        +Booking booking
+        -Long id
+        -String invoiceNumber
+        -Double amount
+        -LocalDateTime issuedAt
+        -String paymentStatus
+        -Booking booking
+        +getId() Long
+        +getInvoiceNumber() String
+        +getAmount() Double
+        +getIssuedAt() LocalDateTime
+        +getPaymentStatus() String
+        +getBooking() Booking
+        +setPaymentStatus(String) void
+        +builder()$ InvoiceBuilder
     }
 
     class Review {
-        +Long id
-        +Long userId
-        +Integer rating
-        +String comment
-        +Workspace workspace
+        -Long id
+        -Long userId
+        -Integer rating
+        -String comment
+        -Workspace workspace
+        +getId() Long
+        +getUserId() Long
+        +getRating() Integer
+        +getComment() String
+        +getWorkspace() Workspace
+        +builder()$ ReviewBuilder
+    }
+
+    class UserRepository {
+        <<interface>>
+        +findByUsername(String) Optional~User~
+        +existsByEmail(String) boolean
+    }
+
+    class BookingRepository {
+        <<interface>>
+        +findByUserId(Long) List~Booking~
+        +findBookedWorkspaceIdsInPeriod(LocalDateTime, LocalDateTime) List~Long~
+        +existsOverlappingBooking(Long, LocalDateTime, LocalDateTime) boolean
+    }
+
+    class WorkspaceRepository {
+        <<interface>>
+        +findByAvailableTrue() List~Workspace~
+        +findByType(WorkspaceType) List~Workspace~
+        +findByIdNotIn(List~Long~) List~Workspace~
+    }
+
+    class InvoiceRepository {
+        <<interface>>
+        +findByInvoiceNumber(String) Optional~Invoice~
+        +findByBookingId(Long) Optional~Invoice~
+    }
+
+    class ReviewRepository {
+        <<interface>>
+        +findByWorkspaceId(Long) List~Review~
     }
 
     class UserService {
@@ -550,9 +627,9 @@ classDiagram
         +registerUser(RegisterRequest) User
         +createUserByAdmin(RegisterRequest) User
         +login(LoginRequest) String
-        +getAllUsers() List
+        +getAllUsers() List~User~
         +getUserById(Long) User
-        +getUsernamesByIds(List) Map
+        +getUsernamesByIds(List~Long~) Map~Long String~
         +deleteUser(Long) void
     }
 
@@ -561,7 +638,12 @@ classDiagram
         -BCryptPasswordEncoder passwordEncoder
         -JwtService jwtService
         +registerUser(RegisterRequest) User
+        +createUserByAdmin(RegisterRequest) User
         +login(LoginRequest) String
+        +getAllUsers() List~User~
+        +getUserById(Long) User
+        +getUsernamesByIds(List~Long~) Map~Long String~
+        +deleteUser(Long) void
     }
 
     class BookingService {
@@ -569,8 +651,75 @@ classDiagram
         -WorkspaceRepository workspaceRepository
         -InvoiceRepository invoiceRepository
         +createBooking(BookingRequest) BookingResponse
-        +getAllBookings() List
+        +getAllBookings() List~BookingResponse~
         +cancelBooking(Long) BookingResponse
+    }
+
+    class WorkspaceService {
+        -WorkspaceRepository workspaceRepository
+        -BookingRepository bookingRepository
+        +getAvailableWorkspaces(LocalDateTime, LocalDateTime) List~WorkspaceDTO~
+        +saveWorkspace(Workspace) Workspace
+    }
+
+    class InvoiceService {
+        -InvoiceRepository invoiceRepository
+        +getAllInvoices() List~InvoiceDTO~
+        +getInvoiceByNumber(String) InvoiceDTO
+        +updatePaymentStatus(Long, String) InvoiceDTO
+    }
+
+    class ReviewService {
+        -ReviewRepository reviewRepository
+        -WorkspaceRepository workspaceRepository
+        +addReview(ReviewRequest) void
+        +getReviewsByWorkspace(Long) List~ReviewDTO~
+    }
+
+    class UserController {
+        -UserService userService
+        +register(RegisterRequest) ResponseEntity
+        +login(LoginRequest) ResponseEntity
+        +createUserByAdmin(RegisterRequest) ResponseEntity
+        +getAllUsers() ResponseEntity
+        +getUsernamesByIds(List~Long~) ResponseEntity
+        +deleteUser(Long) ResponseEntity
+    }
+
+    class BookingController {
+        -BookingService bookingService
+        +createBooking(BookingRequest) ResponseEntity
+        +cancelBooking(Long) ResponseEntity
+        +getAllBookings() ResponseEntity
+    }
+
+    class WorkspaceController {
+        -WorkspaceService workspaceService
+        +getAvailable(LocalDateTime, LocalDateTime) ResponseEntity
+        +addWorkspace(Workspace) ResponseEntity
+    }
+
+    class InvoiceController {
+        -InvoiceService invoiceService
+        +getAllInvoices() ResponseEntity
+        +updateStatus(Long, String) ResponseEntity
+    }
+
+    class ReviewController {
+        -ReviewService reviewService
+        +addReview(ReviewRequest) ResponseEntity
+        +getReviewsByWorkspace(Long) ResponseEntity
+    }
+
+    class JwtService {
+        -String SECRET_KEY
+        -getSigningKey() Key
+        +generateToken(String, String, Long) String
+    }
+
+    class JwtAuthenticationFilter {
+        -String SECRET_KEY
+        #doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain) void
     }
 
     class LoggingAspect {
@@ -581,15 +730,41 @@ classDiagram
 
     User --> Role : has
     Workspace --> WorkspaceType : has
-    UserServiceImpl ..|> UserService : implements
-    Booking --> Workspace : reserved
-    Booking "1" --> "1" Invoice : generates
-    Workspace "1" --> "0..*" Booking : has
     Workspace "1" --> "0..*" Review : receives
-    BookingService ..> Booking : manages
-    BookingService ..> Invoice : creates
+    Workspace "1" --> "0..*" Booking : has
+    Booking --> Workspace : reserved in
+    Booking "1" --> "1" Invoice : generates
+    Review --> Workspace : about
+
+    UserServiceImpl ..|> UserService : implements
+    UserServiceImpl --> UserRepository : uses
+    UserServiceImpl --> JwtService : uses
+
+    BookingService --> BookingRepository : uses
+    BookingService --> WorkspaceRepository : uses
+    BookingService --> InvoiceRepository : uses
+    WorkspaceService --> WorkspaceRepository : uses
+    WorkspaceService --> BookingRepository : uses
+    InvoiceService --> InvoiceRepository : uses
+    ReviewService --> ReviewRepository : uses
+    ReviewService --> WorkspaceRepository : uses
+
+    UserController --> UserService : delegates to
+    BookingController --> BookingService : delegates to
+    WorkspaceController --> WorkspaceService : delegates to
+    InvoiceController --> InvoiceService : delegates to
+    ReviewController --> ReviewService : delegates to
+
+    LoggingAspect ..> UserController : advises
     LoggingAspect ..> UserServiceImpl : advises
+    LoggingAspect ..> BookingController : advises
     LoggingAspect ..> BookingService : advises
+    LoggingAspect ..> WorkspaceController : advises
+    LoggingAspect ..> WorkspaceService : advises
+    LoggingAspect ..> InvoiceController : advises
+    LoggingAspect ..> InvoiceService : advises
+    LoggingAspect ..> ReviewController : advises
+    LoggingAspect ..> ReviewService : advises
 ```
 
 ## 12. Sequence Diagrams
@@ -678,19 +853,19 @@ sequenceDiagram
     end
 ```
 
-### 12.3 Admin: Cancel Booking & Mark Invoice Paid
+### 12.3 Admin/Employee: Cancel Booking & Mark Invoice Paid
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    actor Staff as Admin/Employee
     participant Frontend
     participant Gateway
     participant BookingService
     participant MySQL
 
-    Admin->>Frontend: Click Cancel on a booking
+    Staff->>Frontend: Click Cancel on a booking
     Frontend->>Gateway: PATCH /api/bookings/{id}/cancel (JWT in header)
-    Gateway->>Gateway: Validate JWT - check role = ADMIN
+    Gateway->>Gateway: Validate JWT - check role = ADMIN or EMPLOYEE
     Gateway->>BookingService: Forward request
     BookingService->>MySQL: Find booking by ID
     MySQL-->>BookingService: Booking entity
@@ -699,18 +874,18 @@ sequenceDiagram
     MySQL-->>BookingService: Updated
     BookingService-->>Gateway: BookingResponse (CANCELLED)
     Gateway-->>Frontend: Success
-    Frontend-->>Admin: Booking marked as cancelled
+    Frontend-->>Staff: Booking marked as cancelled
 
-    Admin->>Frontend: Click Mark as Paid on invoice
-    Frontend->>Gateway: PATCH /api/invoices/{id}/pay (JWT in header)
-    Gateway->>Gateway: Validate JWT - check role = ADMIN
+    Staff->>Frontend: Click Mark as Paid on invoice
+    Frontend->>Gateway: PATCH /api/invoices/{id}/payment-status?status=PAID (JWT in header)
+    Gateway->>Gateway: Validate JWT - check role = ADMIN or EMPLOYEE
     Gateway->>BookingService: Forward request
     BookingService->>MySQL: Find invoice by ID
     BookingService->>MySQL: Update paymentStatus = PAID
     MySQL-->>BookingService: Updated
     BookingService-->>Gateway: InvoiceDTO
     Gateway-->>Frontend: Success
-    Frontend-->>Admin: Invoice marked as paid
+    Frontend-->>Staff: Invoice marked as paid
 ```
 
 ## 13. Activity Diagrams
@@ -754,11 +929,11 @@ flowchart TD
     Z --> END(["End"])
 ```
 
-### 13.2 Admin Management Flow
+### 13.2 Admin/Employee Management Flow
 
 ```mermaid
 flowchart TD
-    START2(["Admin Login"]) --> A2["Admin logs in\nJWT with role=ADMIN"]
+    START2(["Staff Login"]) --> A2["Admin/Employee logs in\nJWT with role=ADMIN or EMPLOYEE"]
     A2 --> B2["Admin Dashboard"]
     B2 --> C2{"Choose action"}
 
@@ -766,8 +941,11 @@ flowchart TD
     D2 --> E2{"Action?"}
     E2 -- "Create User" --> F2["POST /api/users/admin/create-user\n(set role: EMPLOYEE or ADMIN)"]
     F2 --> B2
-    E2 -- "Delete User" --> G2["DELETE /api/users/admin/delete/id"]
-    G2 --> B2
+    E2 -- "Delete User\n(ADMIN only)" --> G2{"Role is ADMIN?"}
+    G2 -- Yes --> G3["DELETE /api/users/admin/delete/id"]
+    G3 --> B2
+    G2 -- No --> G4["Action not permitted"]
+    G4 --> B2
 
     C2 -- "Manage Workspaces" --> H2["POST /api/workspaces/add\n(name, type, price, capacity)"]
     H2 --> B2
@@ -781,7 +959,7 @@ flowchart TD
 
     C2 -- "Manage Invoices" --> M2["GET /api/invoices/all"]
     M2 --> N2{"Invoice UNPAID?"}
-    N2 -- Yes --> O2["PATCH /api/invoices/id/pay"]
+    N2 -- Yes --> O2["PATCH /api/invoices/id/payment-status?status=PAID"]
     O2 --> P2["Invoice = PAID"]
     P2 --> B2
     N2 -- No --> B2
